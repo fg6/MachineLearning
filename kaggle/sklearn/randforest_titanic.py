@@ -10,25 +10,41 @@ from sklearn.preprocessing import Imputer
 
 def get_data(file):
     df = pd.read_csv(file)
-    df = df[['PassengerId','Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Survived']]   
-    df['Sex'] = df['Sex'].map({'male': 0, 'female': 1})
-    dummies=pd.get_dummies(df['Pclass'])
-    dummies.columns =  ['Class1', 'Class2', 'Class3']
-    df = pd.concat([df, dummies], axis=1)
-    df.Age = df.groupby(['Sex', 'Class1', 'Class2', 'Class3', 'Parch', 'Fare'])['Age'].apply(lambda x: x.fillna(x.mean()))
-    df.Age = df.groupby(['Sex', 'Class1', 'Class2', 'Class3', 'Parch', 'SibSp'])['Age'].apply(lambda x: x.fillna(x.mean()))
-    df.Age = df.groupby(['Sex', 'Class1', 'Class2', 'Class3', 'Parch'])['Age'].apply(lambda x: x.fillna(x.mean()))
+    df = df[['PassengerId','Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Survived']]
+    df.Age = df.groupby(['Sex','Pclass', 'SibSp', 'Parch', 'Fare'])['Age'].apply(lambda x: x.fillna(x.mean()))
+    df.Age = df.groupby(['Sex','Pclass', 'SibSp', 'Parch'])['Age'].apply(lambda x: x.fillna(x.mean()))
+    df.Age = df.groupby(['Sex','Pclass', 'SibSp'])['Age'].apply(lambda x: x.fillna(x.mean()))
+    df.Age = df.groupby(['Sex','Pclass'])['Age'].apply(lambda x: x.fillna(x.mean()))
 
-    X = df.drop('PassengerId', axis=1)
-    X = X.drop('Pclass', axis=1)
-    X = X.drop('Class1', axis=1)
-    X = X.drop('Survived', axis=1)
-    X = X.drop('SibSp', axis=1)
-    X = X.drop('Parch', axis=1)
-    X = X.drop('Fare', axis=1)
+    df['Sex'] = df['Sex'].map({'male': 0, 'female': 1})
+    #dummies=pd.get_dummies(df['Pclass'])
+    #dummies.columns =  ['Class1', 'Class2', 'Class3']
+    #df.Age = df.groupby(['Sex', 'Class1', 'Class2', 'Class3', 'Parch', 'Fare'])['Age'].apply(lambda x: x.fillna(x.mean()))
+    #df.Age = df.groupby(['Sex', 'Class1', 'Class2', 'Class3', 'Parch', 'SibSp'])['Age'].apply(lambda x: x.fillna(x.mean()))
+    #df.Age = df.groupby(['Sex', 'Class1', 'Class2', 'Class3', 'Parch'])['Age'].apply(lambda x: x.fillna(x.mean()))
+
+
+    bins=[0,20,30,40,60,100]
+    cAge = pd.cut(df.Age, bins, labels = ['0', '1', '2', '3', '4'])
+    dummyAge = pd.get_dummies(cAge, prefix = "Age", drop_first = True)
+    bins=[0,2,5,10,25,50,100,200,500]
+    cFare = pd.cut(df.Fare, bins, labels = ['0', '1', '2', '3', '4','5','6','7'])
+    dummyFare = pd.get_dummies(cFare, prefix = "Fare", drop_first = True)
+    df = pd.concat([df, dummyAge ], axis=1)
+    df = pd.concat([df, dummyFare], axis=1)
+
+    dummies = ['Pclass', 'SibSp', 'Parch']
+    df = pd.get_dummies(df, columns=dummies, prefix=dummies, drop_first = True) 
+
+    
     ID = df['PassengerId']
     Y = df['Survived']
-    return X, Y, ID
+
+    df = df.drop(['PassengerId', 'Age', 'Fare'], axis=1 )
+    
+    X = df.drop('Survived', axis=1)
+   
+    return X, Y, ID, df
 
 def kaggle_data(file):
     df = pd.read_csv(file)
@@ -87,13 +103,13 @@ resize=1
 findbest=0
 dofit=1
 predict=1
-kaggle_predict=1
+kaggle_predict=0
 
-del size
+#del size
 try: 
     size
 except NameError:
-    X, target, id = get_data('/Users/frangy/Documents/DataAna/kaggle_data/titanic_train.csv')
+    X, target, id, df = get_data('/Users/frangy/Documents/DataAna/kaggle_data/titanic_train.csv')
     kaggle_test, kid = kaggle_data('/Users/frangy/Documents/DataAna/kaggle_data/titanic_test.csv')
     size=len(target)
 
