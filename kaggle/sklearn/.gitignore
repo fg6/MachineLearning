@@ -1,2 +1,4 @@
-randforest_prediction.txt
+*_prediction.txt
 myrandforest.py
+xgboost_titanic.py
+test.py
