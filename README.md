@@ -1,2 +1,2 @@
-# MachineLearning
-Machine Learning tests and assignments
+# Machine Learning
+Machine Learning projects from Kaggle, courses or personal interests
