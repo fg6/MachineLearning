@@ -1,67 +1,58 @@
 import numpy as np	
 from datetime import datetime
 import pandas as pd
-from sklearn import metrics
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.datasets import make_classification
-from sklearn.grid_search import GridSearchCV
+import sys
+sys.path.append('../../mypackages/')
+import utils
 
-
-def get_data(file):
+def mnist_data(file, train):
     df = pd.read_csv(file)
     data = df.as_matrix()
     np.random.shuffle(data)
-    X = data[:, 1:] / 255.0 # data is from 0..255
-    Y = data[:, 0]
-    return X, Y
+ 
+    from sklearn import preprocessing
 
-def kaggle_data(file):
-    df = pd.read_csv(file)
-    data = df.as_matrix()
-    X = data[:, :] / 255.0 # data is from 0..255
-    return X
+    if train:
+        X = data[:, 1:] / 255.0 # data is from 0..255
+        normalized_X = preprocessing.normalize(X, norm='l2')
+        standardized_X = preprocessing.scale(X)
+        Y = data[:, 0]
+        #return standardized_X, Y
+        return X, Y
+    else:
+        X = data[:, :] / 255.0 # data is from 0..255
+        return X
 
-try: 
-    size
-except NameError:
-    ims, target = get_data('/Users/frangy/Documents/DataAna/kaggle_data/mnist_train.csv')
-    kaggle_test = kaggle_data('/Users/frangy/Documents/DataAna/kaggle_data/mnist_test.csv')
-    size=len(target)
 
-resize=1
-if resize:
-    train_size=30000
-    test_size=10000
+X, y = mnist_data('/Users/frangy/Documents/DataAna/kaggle_data/mnist_train.csv',1)
+kaggle_test = mnist_data('/Users/frangy/Documents/DataAna/kaggle_data/mnist_test.csv',0)
+size=len(y)
+
     
-    train_ims=ims[0:train_size,]
-    train_target=target[0:train_size,]
-    test_ims=ims[train_size:size,]
-    test_target=target[train_size:size,]
+test_perc=0.5  # perc size of test sample
+X_train, X_test, y_train, y_test = utils.resize(X, y, test_perc)
+
+kaggle_predict=0
+findbest=0
+ 
+if findbest:
+    n_est, maxf, crit, min_s_leaf = utils.best_randforest_cl(X, y)
+else:
+    n_est = 1000  
+    maxf = 'log2'
+    crit = 'gini'
+    min_s_leaf = 1  
+
+clf_rf = utils.randforest_cl(X_train, y_train, n_est, maxf, crit, min_s_leaf)
+
+y_pred = clf_rf.predict(X_train)
+print('Training score:')
+utils.get_accuracy_cl(y_pred, y_train)
     
-
-def find_best():
-
-    clf =  RandomForestClassifier(n_jobs=-1,max_features= 'sqrt' ,n_estimators=50, oob_score = True) 
-
-    # Parameters values to test:
-    param_grid = {        
-        'n_estimators': [200, 700, 1000],
-        'max_features': ['auto', 'sqrt', 'log2'],
-        'criterion': ['gini', 'entropy']
-    }
-
-    # Define test and fit!
-    CV_rfc = GridSearchCV(estimator=clf, param_grid=param_grid, cv= 5)
-    CV_rfc.fit(train_ims, train_target)
-
-    # Get best parameters:
-    print '\n',CV_rfc.best_params_   
-    return CV_rfc.best_estimator_.n_estimators, CV_rfc.best_estimator_.max_features, CV_rfc.best_estimator_.criterion
-
-
-# find best parameters from a list of possibilities:
-n_est, maxf, crit, min_s_leaf = find_best()
+y_pred = clf_rf.predict(X_test)
+print('Testing score:')
+utils.get_accuracy_cl(y_pred, y_test)
 
 
 n_est = 1000  
@@ -70,30 +61,16 @@ crit = 'gini'
 min_s_leaf = 1  
 
 
-# Use the best parameters found to build a model and fit train data:
-model =  RandomForestClassifier(n_jobs=-1, max_features= maxf, n_estimators=n_est, criterion = crit, min_samples_leaf = min_s_leaf, oob_score = True) 
-model.fit(train_ims, train_target)
-    
-
-# Estimate model accuracy for train data:
-results = model.predict(train_ims)
-score = metrics.accuracy_score(train_target,results)
-print("Accuracy on train data:",score)
-
-# Estimate model accuracy for test data:
-results = model.predict(test_ims)
-score =  metrics.accuracy_score(test_target,results)
-print("Accuracy on test data:",score)
 
 
-# Use current model to get prediction for the Kaggle test sample:
-kaggle_predict=1
 if kaggle_predict:
 
-    results = model.predict(kaggle_test)
-    f = open('randforest_prediction.txt', 'w')
-    f.write('ImageId,Label\n')
+    results = clf_rf.predict(kaggle_test)
+
+    f = open('randforest_prediction2.txt', 'w')
+    f.write('PassengerId,Survived\n')
     for i, r  in enumerate(results):
-        s = str(i+1)+str(',')+str(r)+str('\n')
+        k=kid[i]
+        s = str(k)+str(',')+str(r)+str('\n')
         f.write(s)
     f.close()
