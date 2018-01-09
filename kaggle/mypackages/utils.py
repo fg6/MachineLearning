@@ -175,7 +175,7 @@ def get_accuracy_cl(y_pred, y):
     #print("  Score :", (tf(score)), " f1 score :", tf(f1score),
     print("  Score :", (tf(score)), #" f1 score :", tf(f1score),
           "\n  Pos_ok:", pos_ok, "False Neg:", false_neg, 
-          " Pos error:", of(false_pos*100/(false_neg + pos_ok)),
+          " Pos error:", of(false_neg*100/(false_neg + pos_ok)),
           "%\n  Neg_ok:", neg_ok, "False_pos:", false_pos,           
-          " Neg error:", of(false_neg*100/(false_pos + neg_ok)),"%")
+          " Neg error:", of(false_pos*100/(false_pos + neg_ok)),"%")
     
